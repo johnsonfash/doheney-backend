@@ -4,19 +4,23 @@ import { JwtService } from '@nestjs/jwt';
 import * as argon from 'argon2';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { GoogleDto, ManualDto } from './dto';
+import { User } from '@prisma/client';
 
 @Injectable()
 export class AuthService {
+  
   constructor(private prisma: PrismaService, private jwt: JwtService, private config: ConfigService) { }
 
-  async manualLogin(dto: ManualDto): Promise<{ access_token: string }> {
-    const user = await this.prisma.user.findFirst({ where: { email: dto.email } })
-    if (!user) throw new NotFoundException('User not found')
-    if (!await argon.verify(user.hash, dto.password)) throw new UnauthorizedException('Invalid password')
-    return this.signToken(user.id, user.email)
+  async manualLogin(dto: ManualDto): Promise<{ access_token: string, user: Omit<User, 'hash'> }> {
+    const result = await this.prisma.user.findFirst({ where: { email: dto.email } })
+    if (!result) throw new NotFoundException('User not found')
+    if (!await argon.verify(result.hash, dto.password)) throw new UnauthorizedException('Invalid password')
+    const access_token = await this.signToken(result.id, result.email)
+    const { hash, ...user } = result
+    return { access_token, user }
   }
 
-  async googleLogin(dto: GoogleDto): Promise<{ access_token: string }> {
+  async googleLogin(dto: GoogleDto): Promise<string> {
     return this.signToken(0, '')
   }
 
@@ -26,8 +30,7 @@ export class AuthService {
     return true
   }
 
-  async signToken(userID: number, email: string): Promise<{ access_token: string }> {
-    const access_token = await this.jwt.signAsync({ sub: userID, email }, { expiresIn: '60m', secret: this.config.get('JWT_SECRET') })
-    return { access_token }
+  async signToken(userID: number, email: string): Promise<string> {
+    return await this.jwt.signAsync({ sub: userID, email }, { expiresIn: '60m', secret: this.config.get('JWT_SECRET') })
   }
 }
