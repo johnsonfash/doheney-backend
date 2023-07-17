@@ -3,12 +3,12 @@ import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import * as argon from 'argon2';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { GoogleDto, ManualDto } from './dto';
+import { GoogleDto, ManualDto, RegisterDto } from './dto';
 import { User } from '@prisma/client';
 
 @Injectable()
 export class AuthService {
-  
+
   constructor(private prisma: PrismaService, private jwt: JwtService, private config: ConfigService) { }
 
   async manualLogin(dto: ManualDto): Promise<{ access_token: string, user: Omit<User, 'hash'> }> {
@@ -24,9 +24,9 @@ export class AuthService {
     return this.signToken(0, '')
   }
 
-  async register(dto: ManualDto): Promise<boolean> {
+  async register(dto: RegisterDto): Promise<boolean> {
     const hash = await argon.hash(dto.password)
-    await this.prisma.user.create({ data: { email: dto.email, hash } })
+    await this.prisma.user.create({ data: { email: dto.email, name: dto.name, hash } })
     return true
   }
 

@@ -9,3 +9,9 @@ export class ManualDto {
   @IsNotEmpty()
   password: string;
 }
+
+export class RegisterDto extends ManualDto {
+  @IsString()
+  @IsNotEmpty()
+  name: string;
+}
