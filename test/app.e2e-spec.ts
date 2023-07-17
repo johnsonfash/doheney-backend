@@ -17,8 +17,9 @@ describe('AppController (e2e)', () => {
 
   it('/ (GET)', () => {
     return request(app.getHttpServer())
-      .get('/')
+      .post('/auth/manual-login')
+      .attach('email', 'fashanutosin7@gmail.com')
+      .attach('password', 'qwerty12345')
       .expect(200)
-      .expect('Hello World!');
   });
 });
